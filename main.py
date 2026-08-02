@@ -55,7 +55,7 @@ LOGGING_CONFIG = {
     "root": {"level": "INFO", "handlers": ["json_console"]},
 }
 logging.config.dictConfig(LOGGING_CONFIG)
-logger = logging.getLogger("Vipira")
+logger = logging.getLogger("SulgX")
 print("--- APPLICATION IS STARTING ---")
 limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
@@ -453,7 +453,7 @@ async def lifespan(app: FastAPI):
     if DB_BACKEND == "sqlite" and db_conn:
         await db_conn.close()
 
-app = FastAPI(title="Vipira Panel", lifespan=lifespan, docs_url=None, redoc_url=None)
+app = FastAPI(title="SulgX Panel", lifespan=lifespan, docs_url=None, redoc_url=None)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -485,7 +485,7 @@ error_logs: deque = deque(maxlen=2000)
 CACHE_TTL = 60
 link_cache: dict = {}
 
-SESSION_COOKIE = "Vipira_session"
+SESSION_COOKIE = "SulgX_session"
 UNLIMITED_QUOTA_BYTES = 53687091200000
 
 ADMIN_PASSWORD_HASH: str = ""
@@ -563,7 +563,7 @@ async def telegram_reporter():
             chat_row = await db_fetchone("SELECT value FROM settings WHERE key = 'tg_chat_id'", "SELECT value FROM settings WHERE key = 'tg_chat_id'")
             if token_row and chat_row and token_row["value"] and chat_row["value"]:
                 msg = (
-                    f"📊 Vipira Panel Stats\n"
+                    f"📊 SulgX Panel Stats\n"
                     f"🕒 Uptime: {uptime()}\n"
                     f"🔗 Conns: {len(connections)}\n"
                     f"📦 Traffic: {round(stats['total_bytes']/(1024*1024),2)} MB\n"
@@ -615,7 +615,7 @@ def code_to_flag(code: str) -> str:
     except:
         return ""
 
-def generate_vless_link(uid: str, remark: str = "Vipira", address: str = None, extra: dict = None) -> str:
+def generate_vless_link(uid: str, remark: str = "SulgX", address: str = None, extra: dict = None) -> str:
     cache_key = f"{uid}:{remark}:{address}:{json.dumps(extra) if extra else ''}"
     if cache_key in link_cache and link_cache[cache_key]["expires"] > time.time():
         return link_cache[cache_key]["link"]
@@ -691,7 +691,7 @@ def log_event(etype: str, message: str, ip: str = "", ua: str = ""):
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root():
-    return {"service": "Vipira Panel", "version": "1.1.0", "status": "active", "domain": get_domain()}
+    return {"service": "SulgX Panel", "version": "1.1.0", "status": "active", "domain": get_domain()}
 
 @app.get("/health")
 async def health():
@@ -764,13 +764,13 @@ async def notify_telegram_login(ip: str, ua: str):
         except: pass
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     if lang == 'fa':
-        default_login = f"🔐 ورود Vipira\n🌐 IP: {ip}\n🤖 UA: {ua}\n📅 {now_str}"
+        default_login = f"🔐 ورود SulgX\n🌐 IP: {ip}\n🤖 UA: {ua}\n📅 {now_str}"
     else:
-        default_login = f"🔐 Vipira Panel login\n🌐 IP: {ip}\n🤖 UA: {ua}\n📅 {now_str}"
+        default_login = f"🔐 SulgX Panel login\n🌐 IP: {ip}\n🤖 UA: {ua}\n📅 {now_str}"
     msg = templates.get('login', default_login)
     msg = msg.replace("{ip}", ip).replace("{ua}", ua).replace("{time}", now_str)
     panel_url = f"https://{get_domain()}/panel"
-    msg += f'\n\n<a href="{panel_url}">Open Vipira Panel</a>'
+    msg += f'\n\n<a href="{panel_url}">Open SulgX Panel</a>'
     url = f"https://api.telegram.org/bot{token_row['value']}/sendMessage"
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -1170,7 +1170,7 @@ async def create_link(request: Request, _=Depends(require_auth)):
         "uuid": uid, "label": label, "limit_bytes": limit_bytes, "used_bytes": 0,
         "max_connections": max_conn, "active": True, "created_at": now,
         "expires_at": expires_at, "color": color, "flag": flag, "fragment": fragment,
-        "vless_link": generate_vless_link(uid, remark=f"Vipira-{label}", extra=extra),
+        "vless_link": generate_vless_link(uid, remark=f"SulgX-{label}", extra=extra),
     }
 
 @app.get("/api/links")
@@ -1205,7 +1205,7 @@ async def list_links(_=Depends(require_auth)):
             "flag": row.get("flag", ""),
             "fragment": row.get("fragment", ""),
             "current_connections": await count_connections_for_link(uid),
-            "vless_link": generate_vless_link(uid, remark=f"Vipira-{row['label']}", extra=extra),
+            "vless_link": generate_vless_link(uid, remark=f"SulgX-{row['label']}", extra=extra),
         })
     return {"links": result}
 
@@ -1656,7 +1656,7 @@ def generate_subscription_content(link: dict, uid: str, addresses: list, extra: 
     server_node = generate_vless_link(uid, remark=f"{flag_emoji}This Service is Free" if flag_emoji else "This Service is Free", extra=extra)
     links = [status_node, server_node]
     for i, addr in enumerate(addresses):
-        links.append(generate_vless_link(uid, remark=f"{flag_emoji}Vipira-{link['label']}-IP{i+1}" if flag_emoji else f"Vipira-{link['label']}-IP{i+1}", address=addr, extra=extra))
+        links.append(generate_vless_link(uid, remark=f"{flag_emoji}SulgX-{link['label']}-IP{i+1}" if flag_emoji else f"SulgX-{link['label']}-IP{i+1}", address=addr, extra=extra))
     return "\n".join(links)
 
 def _fmt_bytes(b: int) -> str:
@@ -1825,7 +1825,7 @@ async def notify_telegram_event(event: str, label: str, uid: str):
     msg = templates.get(event, default_msg)
     msg = msg.replace("{label}", label).replace("{uid}", uid)
     panel_url = f"https://{get_domain()}/panel"
-    msg += f'\n\n<a href="{panel_url}">Open Vipira Panel</a>'
+    msg += f'\n\n<a href="{panel_url}">Open SulgX Panel</a>'
     url = f"https://api.telegram.org/bot{token_row['value']}/sendMessage"
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -1974,13 +1974,12 @@ def get_client_ip(websocket: WebSocket) -> str:
     if websocket.client: return websocket.client.host
     return "unknown"
 
-# ── HTML Panel v1.1.0 (Vipira Full Remaster) ───────────────
-PANEL_HTML = r"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vipira Panel</title>
+    <title>SulgX Panel</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -1996,6 +1995,7 @@ PANEL_HTML = r"""<!DOCTYPE html>
             --accent-red: #ff1744;
             --border-color: #2a2b30;
             --sidebar-width: 260px;
+            --header-height: 70px;
             --font-family: 'Vazirmatn', sans-serif;
         }
         body {
@@ -2013,6 +2013,7 @@ PANEL_HTML = r"""<!DOCTYPE html>
         #login-page, #dashboard-page { direction: rtl; text-align: right; }
         .fl, label { float: right !important; text-align: right !important; margin-bottom: 6px; }
 
+        /* --- Sidebar --- */
         .sidebar {
             position: fixed;
             right: 0;
@@ -2055,6 +2056,7 @@ PANEL_HTML = r"""<!DOCTYPE html>
         .menu-item i { width: 25px; font-size: 1.1rem; text-align: center; }
         .sidebar-bottom { margin-top: auto; padding-top: 20px; color: var(--text-muted); font-size: 0.8rem; }
 
+        /* --- Main Content --- */
         .main-content {
             margin-right: var(--sidebar-width);
             flex: 1;
@@ -2073,33 +2075,52 @@ PANEL_HTML = r"""<!DOCTYPE html>
         }
         .dashboard-header-left { display: flex; align-items: center; gap: 15px; }
         .dashboard-title { font-size: 1.3rem; font-weight: bold; }
-        .status-pill { background: #1a2a1a; color: var(--accent-green); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--accent-green); font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
+        .status-pill {
+            background: #1a2a1a; color: var(--accent-green);
+            padding: 5px 12px; border-radius: 20px; border: 1px solid var(--accent-green);
+            font-size: 0.8rem; display: flex; align-items: center; gap: 5px;
+        }
         .header-controls { display: flex; gap: 10px; }
+        .btn-icon-flat {
+            background: transparent; border: 1px solid var(--border-color);
+            color: var(--text-muted); border-radius: 8px; padding: 8px 12px;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn-icon-flat:hover { background: var(--card-hover); color: #fff; }
 
+        /* --- Stats --- */
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
         .stat-card {
             background: var(--card-bg); border: 1px solid var(--border-color);
             border-radius: 16px; padding: 20px; display: flex; flex-direction: column;
-            justify-content: center; min-height: 90px;
+            justify-content: center; min-height: 90px; position: relative;
         }
-        .stat-card .stat-val { font-size: 1.8rem; font-weight: bold; margin-top: 5px; }
+        .stat-card .stat-val { font-size: 1.8rem; font-weight: bold; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; }
         .stat-card .stat-val small { font-size: 0.9rem; font-weight: normal; color: var(--text-muted); }
         .stat-card .stat-label { color: var(--text-muted); font-size: 0.85rem; }
 
+        /* --- Cards --- */
         .content-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
         .card-title { font-weight: bold; font-size: 1.1rem; }
 
+        /* --- Tables --- */
         .tbl-wrap { overflow-x: auto; margin-top: 10px; }
         .tbl { width: 100%; border-collapse: collapse; text-align: right; }
         .tbl th, .tbl td { padding: 12px 8px; border-bottom: 1px solid var(--border-color); }
         .tbl th { color: var(--text-muted); font-weight: normal; font-size: 0.85rem; }
         .tbl td { font-size: 0.9rem; }
 
+        /* --- Forms --- */
         .form-group { margin-bottom: 15px; }
-        .form-input { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color); background: #111213; color: #fff; outline: none; transition: 0.2s; }
+        .form-input {
+            width: 100%; padding: 10px 14px; border-radius: 10px;
+            border: 1px solid var(--border-color); background: #111213;
+            color: #fff; outline: none; transition: 0.2s;
+        }
         .form-input:focus { border-color: var(--accent-green); }
 
+        /* --- Buttons --- */
         .btn-primary { background: var(--accent-green); color: #000; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; transition: 0.2s; }
         .btn-primary:hover { opacity: 0.8; }
         .btn-outline { background: transparent; color: #fff; border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 10px; transition: 0.2s; }
@@ -2107,11 +2128,25 @@ PANEL_HTML = r"""<!DOCTYPE html>
         .btn-danger { background: rgba(255, 23, 68, 0.1); color: var(--accent-red); border: 1px solid rgba(255, 23, 68, 0.3); padding: 5px 12px; border-radius: 8px; }
         .btn-sm { padding: 6px 14px; font-size: 0.85rem; }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 30px; width: 100%; max-width: 500px; position: relative; }
-        .modal-close { position: absolute; top: 15px; left: 15px; background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 5px 12px; border-radius: 8px; font-size: 1.2rem; }
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            z-index: 9999; display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-box {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 20px; padding: 30px; width: 100%; max-width: 500px;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute; top: 15px; left: 15px; /* LTR inside RTL container */
+            background: transparent; border: 1px solid var(--border-color); color: var(--text-muted);
+            padding: 5px 12px; border-radius: 8px; font-size: 1.2rem;
+        }
         .modal-close:hover { color: #fff; border-color: #fff; }
 
+        /* --- Mobile --- */
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; display: none; }
         @media(max-width: 992px){
             .sidebar { right: -100%; }
@@ -2128,36 +2163,54 @@ PANEL_HTML = r"""<!DOCTYPE html>
 </head>
 <body>
 
+<!-- Sidebar -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <div class="logo-text">Vipira</div>
-        <div class="profile-icon">V</div>
+        <div class="logo-text">NERULA</div>
+        <div class="profile-icon">N</div>
     </div>
     <ul class="menu-list">
-        <button class="menu-item active" data-page="dashboard" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> <span>داشبورد</span></button>
-        <button class="menu-item" data-page="inbounds" onclick="switchPage('inbounds')"><i class="fas fa-network-wired"></i> <span>اینباندها</span></button>
-        <button class="menu-item" data-page="addresses" onclick="switchPage('addresses')"><i class="fas fa-shield-alt"></i> <span>آی‌پی تمیز</span></button>
-        <button class="menu-item" data-page="ipscanner" onclick="switchPage('ipscanner')"><i class="fas fa-search"></i> <span>اسکنر</span></button>
-        <button class="menu-item" data-page="logs" onclick="switchPage('logs')"><i class="fas fa-list"></i> <span>لاگ‌ها</span></button>
-        <button class="menu-item" data-page="telegram" onclick="switchPage('telegram')"><i class="fab fa-telegram"></i> <span>ربات</span></button>
-        <button class="menu-item" data-page="settings" onclick="switchPage('settings')"><i class="fas fa-cog"></i> <span>تنظیمات</span></button>
+        <button class="menu-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+            <i class="fas fa-home"></i> <span>داشبورد</span>
+        </button>
+        <button class="menu-item" data-page="inbounds" onclick="switchPage('inbounds')">
+            <i class="fas fa-network-wired"></i> <span>اینباندها</span>
+        </button>
+        <button class="menu-item" data-page="addresses" onclick="switchPage('addresses')">
+            <i class="fas fa-shield-alt"></i> <span>آی‌پی تمیز</span>
+        </button>
+        <button class="menu-item" data-page="ipscanner" onclick="switchPage('ipscanner')">
+            <i class="fas fa-search"></i> <span>اسکنر</span>
+        </button>
+        <button class="menu-item" data-page="logs" onclick="switchPage('logs')">
+            <i class="fas fa-list"></i> <span>لاگ‌ها</span>
+        </button>
+        <button class="menu-item" data-page="telegram" onclick="switchPage('telegram')">
+            <i class="fab fa-telegram"></i> <span>ربات</span>
+        </button>
+        <button class="menu-item" data-page="settings" onclick="switchPage('settings')">
+            <i class="fas fa-cog"></i> <span>تنظیمات</span>
+        </button>
     </ul>
     <div class="sidebar-bottom">
-        <span onclick="doLogout()" style="cursor:pointer; display:block; margin-top:15px; color:var(--accent-red);"><i class="fas fa-sign-out-alt"></i> خروج</span>
-        <div style="margin-top:20px;">Vipira v1.1.0</div>
+        <span onclick="doLogout()" style="cursor:pointer; display:block; margin-top:15px; color:var(--accent-red);">
+            <i class="fas fa-sign-out-alt"></i> خروج
+        </span>
+        <div style="margin-top:20px;">NERULA v1.1.0</div>
     </div>
 </aside>
 
+<!-- Main Content -->
 <div id="dashboard-page" class="main-content">
     <div class="dashboard-header">
         <div class="dashboard-header-left">
-            <button class="btn-primary btn-sm" onclick="toggleSidebar()" style="display:none;" id="hamburgerBtn"><i class="fas fa-bars"></i></button>
+            <button class="btn-icon-flat" onclick="toggleSidebar()" style="display:none;" id="hamburgerBtn"><i class="fas fa-bars"></i></button>
             <h1 class="dashboard-title">داشبورد</h1>
             <div class="status-pill"><i class="fas fa-circle" style="font-size: 8px;"></i> فعال</div>
         </div>
         <div class="header-controls">
-            <button class="btn-primary btn-sm" onclick="randomInbound()">+ تصادفی</button>
+            <button class="btn-icon-flat"><i class="fas fa-moon"></i></button>
         </div>
     </div>
 
@@ -2186,6 +2239,7 @@ PANEL_HTML = r"""<!DOCTYPE html>
         </div>
     </section>
 
+    <!-- سایر صفحات ... -->
     <section class="page" id="page-addresses" style="display:none;">
         <div class="content-card">
             <div class="card-header"><span class="card-title">آی‌پی‌های تمیز</span></div>
@@ -2220,21 +2274,38 @@ PANEL_HTML = r"""<!DOCTYPE html>
         <div class="content-card">
             <div class="card-header"><span class="card-title">تنظیمات</span></div>
             <div class="form-group"><label>متن فوتر</label><input class="form-input" id="set-footer"></div>
-            <div class="form-group"><label>محدودیت پیش‌فرض (GB)</label><input class="form-input" type="number" id="set-default-limit" placeholder="0"></div>
             <button class="btn-primary btn-sm" onclick="saveGeneralSettings()">ذخیره تنظیمات</button>
             <div style="margin-top:20px;"><button class="btn-danger btn-sm" onclick="resetAllSettings()">بازنشانی به پیش‌فرض</button></div>
         </div>
     </section>
 </div>
 
+<!-- Modal Create Inbound -->
 <div class="modal-overlay" id="mo-add">
     <div class="modal-box">
         <button class="modal-close" onclick="closeModal('mo-add')">✕</button>
         <h3 style="margin-bottom:20px;">ایجاد اینباند جدید</h3>
-        <div class="form-group"><label>نام</label><input class="form-input" id="nl" placeholder="مثلاً: کاربر ۱"></div>
-        <div class="form-group"><label>محدودیت (GB)</label><input class="form-input" type="number" id="nv" value="0" placeholder="0 = نامحدود"></div>
-        <div class="form-group"><label>حداکثر اتصالات</label><input class="form-input" type="number" id="nc" value="0" placeholder="0 = نامحدود"></div>
-        <div class="form-group"><label>اعتبار (روز)</label><input class="form-input" type="number" id="nd" value="0" placeholder="0 = بدون انقضا"></div>
+        
+        <div class="form-group">
+            <label>نام (Remark)</label>
+            <input class="form-input" id="nl" placeholder="مثلاً: کاربر ۱">
+        </div>
+        
+        <div class="form-group">
+            <label>محدودیت ترافیک (GB)</label>
+            <input class="form-input" type="number" id="nv" value="0" placeholder="0 = نامحدود">
+        </div>
+        
+        <div class="form-group">
+            <label>حداکثر اتصالات همزمان</label>
+            <input class="form-input" type="number" id="nc" value="0" placeholder="0 = نامحدود">
+        </div>
+
+        <div class="form-group">
+            <label>مدت اعتبار (روز)</label>
+            <input class="form-input" type="number" id="nd" value="0" placeholder="0 = بدون انقضا">
+        </div>
+        
         <div style="display:flex; gap:10px; margin-top:10px;">
             <button class="btn-primary" onclick="createLink()" style="flex:1;">ایجاد</button>
             <button class="btn-outline" onclick="closeModal('mo-add')" style="flex:1;">انصراف</button>
@@ -2246,7 +2317,10 @@ PANEL_HTML = r"""<!DOCTYPE html>
 const $=s=>document.querySelector(s), $m=id=>document.getElementById(id);
 let allLinks=[], allAddrs=[], isAuthenticated=false;
 
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+}
 function switchPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.style.display='none');
     document.getElementById('page-'+pageId).style.display='block';
@@ -2254,9 +2328,16 @@ function switchPage(pageId) {
     document.querySelector(`.menu-item[data-page="${pageId}"]`).classList.add('active');
     if(window.innerWidth <= 992) toggleSidebar();
 }
-function showAddMo() { document.getElementById('mo-add').style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+// ---------- MODAL FUNCTIONS ----------
+function showAddMo() {
+    document.getElementById('mo-add').style.display = 'flex';
+}
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+// ---------- LOGIN ----------
 async function checkAuth(){
     try{const r=await fetch('/api/me');
     if((await r.json()).authenticated){isAuthenticated=true; loadDashboard();}
@@ -2266,7 +2347,7 @@ function showLogin(){
     document.getElementById('dashboard-page').style.display='none';
     document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg-dark);">
         <div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:20px;padding:40px;width:100%;max-width:400px;">
-            <h2 style="text-align:center;margin-bottom:30px;">ورود به پنل Vipira</h2>
+            <h2 style="text-align:center;margin-bottom:30px;">ورود به پنل</h2>
             <div class="form-group"><label>رمز عبور</label><input class="form-input" type="password" id="login-pw"></div>
             <button class="btn-primary" style="width:100%;" onclick="doLogin()">ورود</button>
         </div>
@@ -2278,16 +2359,24 @@ async function doLogin(){
     if(r.ok){isAuthenticated=true; location.reload();}
     else alert('رمز عبور اشتباه است');
 }
-async function doLogout(){ await fetch('/api/logout',{method:'POST'}); location.reload(); }
+async function doLogout(){
+    await fetch('/api/logout',{method:'POST'});
+    location.reload();
+}
 
+// ---------- DASHBOARD ----------
 async function loadDashboard(){
     document.getElementById('dashboard-page').style.display='flex';
     if(window.innerWidth <= 992) document.getElementById('hamburgerBtn').style.display='block';
-    await loadLinks(); await loadStats(); await loadAddrs();
+    await loadLinks();
+    await loadStats();
+    await loadAddrs();
     setInterval(()=>{loadStats(); loadLinks();}, 10000);
 }
+
 async function loadStats(){
-    const r=await fetch('/stats'); const data=await r.json();
+    const r=await fetch('/stats');
+    const data=await r.json();
     const container = document.getElementById('statsContainer');
     if(container) container.innerHTML = `
         <div class="stat-card"><div class="stat-label">ترافیک کل</div><div class="stat-val">${(data.total_traffic_mb||0).toFixed(1)} <small>MB</small></div></div>
@@ -2296,10 +2385,14 @@ async function loadStats(){
         <div class="stat-card"><div class="stat-label">درخواست‌ها</div><div class="stat-val">${data.total_requests||0}</div></div>
     `;
 }
+
 async function loadLinks(){
-    const r=await fetch('/api/links'); const data=await r.json();
-    allLinks=data.links || []; renderLinks(allLinks);
+    const r=await fetch('/api/links');
+    const data=await r.json();
+    allLinks=data.links || [];
+    renderLinks(allLinks);
 }
+
 function renderLinks(links){
     const tb=$m('ltb');
     if(!tb) return;
@@ -2317,43 +2410,193 @@ function renderLinks(links){
         </tr>`;
     }).join('');
 }
+
 function cpLink(txt){ navigator.clipboard.writeText(txt).then(()=>alert('لینک کپی شد')); }
 async function delLink(uid){ if(confirm('آیا مطمئن هستید؟')){ await fetch('/api/links/'+uid,{method:'DELETE'}); loadLinks(); }}
 
-async function randomInbound(){
-    const names=['User','Client','Node']; const n=names[Math.floor(Math.random()*names.length)]+'-'+Math.floor(Math.random()*1000);
-    await fetch('/api/links',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:n,limit_value:0})});
-    loadLinks(); loadStats();
-}
-
 async function loadAddrs(){
-    const r=await fetch('/api/addresses'); const data=await r.json(); allAddrs=data.addresses || [];
-    const el=$m('addr-list'); if(el) el.innerHTML = allAddrs.map(a=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-color);"><span>${a}</span><button class="btn-danger btn-sm" onclick="delAddr('${a}')">حذف</button></div>`).join('');
+    const r=await fetch('/api/addresses');
+    const data=await r.json();
+    allAddrs=data.addresses || [];
+    const el=$m('addr-list');
+    if(el) el.innerHTML = allAddrs.map(a=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-color);"><span>${a}</span><button class="btn-danger btn-sm" onclick="delAddr('${a}')">حذف</button></div>`).join('');
 }
 async function addBatchAddrs(){
-    const raw=$m('batch-addrs').value; const lines=raw.split('\n').filter(l=>l.trim());
+    const raw=$m('batch-addrs').value;
+    const lines=raw.split('\n').filter(l=>l.trim());
     await fetch('/api/addresses/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({addresses:lines})});
     loadAddrs();
 }
-async function delAddr(addr){ /* Placeholder for simplicity in full code */ }
+async function delAddr(addr){ /* Simple logic for demo */ }
 
+// ---------- CREATE INBOUND ----------
 async function createLink(){
     const label = $m('nl').value.trim() || 'بی‌نام';
     const limit_val = parseFloat($m('nv').value) || 0;
     const max_conn = parseInt($m('nc').value) || 0;
     const days_valid = parseInt($m('nd').value) || 0;
-    const body = { label: label, limit_value: limit_val, limit_unit: 'GB', max_connections: max_conn, days_valid: days_valid };
+
+    const body = {
+        label: label,
+        limit_value: limit_val,
+        limit_unit: 'GB',
+        max_connections: max_conn,
+        days_valid: days_valid
+    };
+
     try {
-        const r = await fetch('/api/links', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-        if(r.ok){ alert('اینباند با موفقیت ساخته شد!'); closeModal('mo-add'); $m('nl').value=''; $m('nv').value='0'; $m('nc').value='0'; $m('nd').value='0'; loadLinks(); loadStats(); }
-        else { const err = await r.json(); alert('خطا: ' + (err.detail || 'مشکلی پیش آمده')); }
-    } catch(e) { alert('خطای ارتباط با سرور'); }
+        const r = await fetch('/api/links', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        if(r.ok){
+            alert('اینباند با موفقیت ساخته شد!');
+            closeModal('mo-add');
+            // پاک کردن فرم
+            $m('nl').value = '';
+            $m('nv').value = '0';
+            $m('nc').value = '0';
+            $m('nd').value = '0';
+            loadLinks();
+            loadStats();
+        } else {
+            const err = await r.json();
+            alert('خطا: ' + (err.detail || 'مشکلی پیش آمده'));
+        }
+    } catch(e) {
+        alert('خطای ارتباط با سرور');
+    }
 }
 
-async function startIPScan(){ /* Placeholder Logic */ }
-async function saveTelegramSettings(){ /* Placeholder Logic */ }
-async function saveGeneralSettings(){ /* Placeholder Logic */ }
-async function resetAllSettings(){ /* Placeholder Logic */ }
+// ---------- STUB FUNCTIONS ----------
+async function startIPScan(){ /* Placeholder */ }
+async function saveTelegramSettings(){ /* Placeholder */ }
+async function saveGeneralSettings(){ /* Placeholder */ }
+async function resetAllSettings(){ /* Placeholder */ }
+
+checkAuth();
+</script>
+</body>
+</html>
+
+<script>
+// توابع اصلی برای مدیریت دینامیک صفحات
+const $=s=>document.querySelector(s), $m=id=>document.getElementById(id);
+let allLinks=[], allAddrs=[], isAuthenticated=false;
+
+// توابع اولیه
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+}
+
+function switchPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.style.display='none');
+    document.getElementById('page-'+pageId).style.display='block';
+    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+    document.querySelector(`.menu-item[data-page="${pageId}"]`).classList.add('active');
+    // در موبایل سایدبار بسته شود
+    if(window.innerWidth <= 992) toggleSidebar();
+}
+
+// هندل کردن لاگین
+async function checkAuth(){
+    try{const r=await fetch('/api/me');
+    if((await r.json()).authenticated){isAuthenticated=true; loadDashboard();}
+    else showLogin();}catch{showLogin();}
+}
+function showLogin(){
+    document.getElementById('dashboard-page').style.display='none';
+    document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg-dark);">
+        <div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:20px;padding:40px;width:100%;max-width:400px;">
+            <h2 style="text-align:center;margin-bottom:30px;">ورود به پنل</h2>
+            <div class="form-group"><label>رمز عبور</label><input class="form-input" type="password" id="login-pw"></div>
+            <button class="btn-primary" style="width:100%;" onclick="doLogin()">ورود</button>
+        </div>
+    </div>`;
+}
+async function doLogin(){
+    const pw=$m('login-pw').value;
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+    if(r.ok){isAuthenticated=true; location.reload();}
+    else alert('رمز عبور اشتباه است');
+}
+
+// بارگذاری دشبورد
+async function loadDashboard(){
+    document.getElementById('dashboard-page').style.display='flex';
+    if(window.innerWidth <= 992) document.getElementById('hamburgerBtn').style.display='block';
+    // لود کردن لیست لینک‌ها و آمار
+    await loadLinks();
+    await loadStats();
+    await loadAddrs();
+    setInterval(()=>{loadStats(); loadLinks();}, 10000);
+}
+
+async function loadStats(){
+    const r=await fetch('/stats');
+    const data=await r.json();
+    const container = document.getElementById('statsContainer');
+    container.innerHTML = `
+        <div class="stat-card"><div class="stat-label">ترافیک کل</div><div class="stat-val">${(data.total_traffic_mb||0).toFixed(1)} <small>MB</small></div></div>
+        <div class="stat-card"><div class="stat-label">اتصالات فعال</div><div class="stat-val">${data.active_connections||0}</div></div>
+        <div class="stat-card"><div class="stat-label">آپتایم</div><div class="stat-val">${data.uptime||'0:00:00'}</div></div>
+        <div class="stat-card"><div class="stat-label">درخواست‌ها</div><div class="stat-val">${data.total_requests||0}</div></div>
+    `;
+}
+
+async function loadLinks(){
+    const r=await fetch('/api/links');
+    const data=await r.json();
+    allLinks=data.links || [];
+    renderLinks(allLinks);
+}
+
+function renderLinks(links){
+    const tb=$m('ltb');
+    if(!tb) return;
+    tb.innerHTML = links.map(l=>`
+        <tr>
+            <td><strong>${l.label}</strong></td>
+            <td>${(l.used_bytes/1024/1024/1024).toFixed(2)} GB / ${(l.limit_bytes/1024/1024/1024).toFixed(2)} GB</td>
+            <td><span style="color:${l.active?'var(--accent-green)':'var(--accent-red)'}">${l.active?'فعال':'غیرفعال'}</span></td>
+            <td>
+                <button class="btn-outline btn-sm" onclick="cpLink('${l.vless_link}')">کپی</button>
+                ${l.label !== 'This Server is Free' ? `<button class="btn-danger btn-sm" onclick="delLink('${l.uuid}')">حذف</button>` : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function cpLink(txt){ navigator.clipboard.writeText(txt); alert('لینک کپی شد'); }
+async function delLink(uid){ if(confirm('حذف شود؟')){ await fetch('/api/links/'+uid,{method:'DELETE'}); loadLinks(); }}
+
+async function loadAddrs(){
+    const r=await fetch('/api/addresses');
+    const data=await r.json();
+    allAddrs=data.addresses || [];
+    const el=$m('addr-list');
+    el.innerHTML = allAddrs.map(a=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-color);"><span>${a}</span><button class="btn-danger btn-sm" onclick="delAddr('${a}')">حذف</button></div>`).join('');
+}
+async function addBatchAddrs(){
+    const raw=$m('batch-addrs').value;
+    const lines=raw.split('\n').filter(l=>l.trim());
+    await fetch('/api/addresses/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({addresses:lines})});
+    loadAddrs();
+}
+async function delAddr(addr){ await fetch('/api/addresses/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({addresses:[]})}); loadAddrs(); } // Note: simplified for example
+
+// اسکنر و سایر توابع
+async function startIPScan(){ /* منطق اسکنر ساده شده برای نمایش UI */ }
+
+// تنظیمات
+async function saveGeneralSettings(){ await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}); }
+
+// تغییر تم ساده
+function toggleTheme(){ document.body.classList.toggle('dark-theme'); }
 
 checkAuth();
 </script>
@@ -2377,7 +2620,7 @@ if __name__ == "__main__":
     import subprocess
     import os
     port = int(os.environ.get("PORT", CONFIG.get("port", 8000)))
-    logger.info(f"Starting Vipira Panel on port {port}")
+    logger.info(f"Starting SulgX Panel on port {port}")
     try:
         subprocess.run(
             [
